@@ -1,13 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:velocity_x/velocity_x.dart';
+import 'package:http/http.dart' as http;
+import 'config.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 class Dashboard extends StatefulWidget {
-
   final token;
-
-  const Dashboard({super.key, this.token});
+  const Dashboard({required this.token,super.key});
 
   @override
   State<Dashboard> createState() => _DashboardState();
@@ -16,30 +18,81 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
 
   late String userId;
-  TextEditingController _todoTitle = TextEditingController();
-  TextEditingController _todoDesc = TextEditingController();
+  final TextEditingController _todoTitle = TextEditingController();
+  final TextEditingController _todoDesc = TextEditingController();
   List? items;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-
     Map<String,dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
 
     userId = jwtDecodedToken['_id'];
     getTodoList(userId);
   }
 
-  void addTodo() {
+  void addTodo() async{
+
+    if(_todoTitle.text.isNotEmpty && _todoDesc.text.isNotEmpty){
+
+      var regBody = {
+        "userId":userId,
+        "title":_todoTitle.text,
+        "desc":_todoDesc.text
+      };
+
+      var response = await http.post(Uri.parse(addtodo),
+          headers: {"Content-Type":"application/json"},
+          body: jsonEncode(regBody)
+      );
+
+
+      var jsonResponse = jsonDecode(response.body);
+      print(jsonResponse['status']);
+
+      if(jsonResponse['status']){
+        _todoDesc.clear();
+        _todoTitle.clear();
+        Navigator.pop(context);
+        getTodoList(userId);
+
+      }else{
+        print("SomeThing Went Wrong");
+      }
+    }
+  }
+
+  void getTodoList(userId) async {
+    var regBody = {
+      "userId":userId
+    };
+    var response = await http.post(Uri.parse(getToDoList),
+        headers: {"Content-Type":"application/json"},
+        body: jsonEncode(regBody)
+    );
+
+    var jsonResponse = jsonDecode(response.body);
+    items = jsonResponse['success'];
+    setState(() {
+
+    });
 
   }
 
-  void getTodoList(userId) {
+  void deleteItem(id) async{
+    var regBody = {
+      "id":id
+    };
 
-  }
+    var response = await http.post(Uri.parse(deleteTodo),
+        headers: {"Content-Type":"application/json"},
+        body: jsonEncode(regBody)
+    );
 
-  void deleteItem(id){
+    var jsonResponse = jsonDecode(response.body);
+    if(jsonResponse['status']){
+      getTodoList(userId);
+    }
 
   }
 
@@ -55,14 +108,18 @@ class _DashboardState extends State<Dashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(child: Icon(Icons.list,size: 30.0,),backgroundColor: Colors.white,radius: 30.0,),
+                CircleAvatar(backgroundColor: Colors.white,radius: 30.0,child: Icon(Icons.list,size: 30.0,),),
                 SizedBox(height: 10.0),
                 Text('ToDo with NodeJS + Mongodb',style: TextStyle(fontSize: 30.0,fontWeight: FontWeight.w700),),
                 SizedBox(height: 8.0),
                 Text('5 Task',style: TextStyle(fontSize: 20),),
+
               ],
             ),
           ),
+
+
+
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -91,6 +148,7 @@ class _DashboardState extends State<Dashboard> {
                               },
                             ),
                           ],
+
                         ),
                         child: Card(
                           borderOnForeground: false,
@@ -111,11 +169,12 @@ class _DashboardState extends State<Dashboard> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () =>_displayTextInputDialog(context) ,
-        child: Icon(Icons.add),
         tooltip: 'Add-ToDo',
+        child: Icon(Icons.add),
       ),
     );
   }
+
   Future<void> _displayTextInputDialog(BuildContext context) async {
     return showDialog(
         context: context,

@@ -27,9 +27,12 @@ class _SignInPageState extends State<SignInPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    initSharedPref();
   }
 
-  void initSharedPref() {}
+  Future<void> initSharedPref() async {
+    prefs = await SharedPreferences.getInstance();
+  }
 
   void loginUser() async {
     if(emailController.text.isNotEmpty && passwordController.text.isNotEmpty){

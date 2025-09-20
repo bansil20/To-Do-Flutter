@@ -4,6 +4,9 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_flutter/registration.dart';
 
+import 'SignInPage.dart';
+import 'dashboard.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -27,8 +30,8 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity
 
       ),
-      home: Registration()
-      // home: (token != null && JwtDecoder.isExpired(token) == false) ? Dashboard(token: token):SignInPage(),
+      // home: Registration()
+      home: (token != null && JwtDecoder.isExpired(token) == false) ? Dashboard(token: token):SignInPage(),
     );
   }
 }
